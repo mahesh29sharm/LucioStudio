@@ -15,8 +15,8 @@ import {
 } from './icons';
 
 interface FileSystemPanelProps {
-  onDocumentSelect: (name: string) => void;
-  selectedDocument: string;
+  onDocumentOpen: (name: string) => void;
+  activeDocumentName: string;
 }
 
 interface FileNode {
@@ -41,27 +41,45 @@ const fileStructure: FileNode[] = [
   {
     name: 'Trilegal',
     type: 'folder',
-    children: []
+    children: [
+      { name: 'Contract Agreement 2025', type: 'pdf' },
+      { name: 'Legal Framework Document', type: 'pdf' },
+      { name: 'Compliance Report Q1', type: 'pdf' },
+    ]
   },
   {
     name: 'Important Documents',
     type: 'folder',
-    children: []
+    children: [
+      { name: 'Annual Financial Report', type: 'pdf' },
+      { name: 'Strategic Planning Guide', type: 'pdf' },
+      { name: 'Employee Handbook 2025', type: 'pdf' },
+    ]
   },
   {
     name: 'Final Drafts',
     type: 'folder',
-    children: []
+    children: [
+      { name: 'Final Presentation Deck', type: 'pdf' },
+      { name: 'Project Completion Report', type: 'pdf' },
+    ]
   },
   {
     name: 'Hiring',
     type: 'folder',
-    children: []
+    children: [
+      { name: 'Candidate Evaluation Form', type: 'pdf' },
+      { name: 'Interview Guidelines', type: 'pdf' },
+    ]
   },
   {
     name: 'Reports and Stats',
     type: 'folder',
-    children: []
+    children: [
+      { name: 'Monthly Performance Report', type: 'pdf' },
+      { name: 'Sales Analysis Q4 2024', type: 'pdf' },
+      { name: 'Customer Satisfaction Survey', type: 'pdf' },
+    ]
   },
 ];
 
@@ -139,9 +157,9 @@ function FolderItem({ node, onSelect, selectedDocument, depth = 0 }: {
   );
 }
 
-export default function FileSystemPanel({ onDocumentSelect, selectedDocument }: FileSystemPanelProps) {
+export default function FileSystemPanel({ onDocumentOpen, activeDocumentName }: FileSystemPanelProps) {
   return (
-    <div className="bg-[#fafafa] content-stretch flex flex-col items-start relative shrink-0 w-[240px] h-full">
+    <div className="bg-sidebar content-stretch flex flex-col items-start relative shrink-0 w-full h-full">
       {/* Header */}
       <div className="h-[56px] relative shrink-0 w-full">
         <div className="flex flex-col justify-center size-full">
@@ -221,8 +239,8 @@ export default function FileSystemPanel({ onDocumentSelect, selectedDocument }: 
             <div key={idx} className="relative shrink-0 w-full">
               <FolderItem
                 node={node}
-                onSelect={onDocumentSelect}
-                selectedDocument={selectedDocument}
+                onSelect={onDocumentOpen}
+                selectedDocument={activeDocumentName}
               />
             </div>
           ))}

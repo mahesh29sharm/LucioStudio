@@ -202,7 +202,7 @@ export default function NotesPanel() {
   // Note Detail View
   if (selectedNote) {
     return (
-      <div className="bg-white relative shrink-0 w-[320px] h-full">
+      <div className="bg-card relative shrink-0 w-full h-full">
         <div className="content-stretch flex flex-col items-start relative size-full">
           {/* Header */}
           <div className="relative shrink-0 w-full">
@@ -296,7 +296,7 @@ export default function NotesPanel() {
 
   // Notes List View
   return (
-    <div className="bg-white relative shrink-0 w-[320px] h-full">
+    <div className="bg-card relative shrink-0 w-full h-full">
       <div className="content-stretch flex flex-col items-start relative size-full">
         {/* Header */}
         <div className="relative shrink-0 w-full">

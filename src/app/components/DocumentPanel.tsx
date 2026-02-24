@@ -1,9 +1,23 @@
+import { useState } from 'react';
 import svgPaths from "../../imports/svg-7wafoh0qzb";
 import imgDocument from "figma:asset/f3108fdb441b102fc3d174c73083faa8cded5315.png";
+import PagesDrawer from './PagesDrawer';
+import BookmarksDrawer from './BookmarksDrawer';
+import CommentsDrawer from './CommentsDrawer';
+
+interface OpenDocument {
+  id: string;
+  name: string;
+}
 
 interface DocumentPanelProps {
-  documentName: string;
+  openDocuments: OpenDocument[];
+  activeDocumentId: string;
+  onTabChange: (id: string) => void;
+  onTabClose: (id: string) => void;
 }
+
+type DrawerType = 'pages' | 'bookmarks' | 'comments' | null;
 
 // PDF File Icon for tab
 function TabPDFIcon() {
@@ -50,44 +64,79 @@ function CloseIcon() {
   );
 }
 
-export default function DocumentPanel({ documentName }: DocumentPanelProps) {
+export default function DocumentPanel({ openDocuments, activeDocumentId, onTabChange, onTabClose }: DocumentPanelProps) {
+  const [activeDrawer, setActiveDrawer] = useState<DrawerType>(null);
+  const [zoomLevel, setZoomLevel] = useState(100);
+
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 25, 200));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 25, 50));
+  };
+
+  const toggleDrawer = (drawer: DrawerType) => {
+    setActiveDrawer(activeDrawer === drawer ? null : drawer);
+  };
+
+  const activeDocument = openDocuments.find(doc => doc.id === activeDocumentId);
+  const documentName = activeDocument ? activeDocument.name : '';
+
   return (
     <div className="bg-[#f7f7f7] content-stretch flex flex-col items-start justify-center relative flex-1 h-full">
       {/* Tab Area */}
-      <div className="bg-[#f7f7f7] h-[40px] relative shrink-0 w-full">
-        <div className="flex flex-row items-end overflow-clip rounded-[inherit] size-full">
-          <div className="content-stretch flex items-end px-[4px] relative size-full">
-            <div className="bg-[#fafafa] h-[36px] relative rounded-tl-[12px] rounded-tr-[12px] shrink-0">
-              <div className="content-stretch flex gap-[5px] h-full items-center justify-center overflow-clip p-[10px] relative rounded-[inherit]">
-                <TabPDFIcon />
-                <p className="font-['Inter',sans-serif] font-semibold leading-[1.6] not-italic relative shrink-0 text-[#0d0d0d] text-[10px]">
-                  {documentName}
-                </p>
-                <div className="content-stretch flex flex-col items-center justify-center relative shrink-0 size-[20px]">
-                  <div className="h-[10.219px] relative shrink-0 w-[10.607px]">
-                    <div className="absolute contents inset-[-0.54%_0.56%_0.09%_-0.56%]">
-                      <div className="absolute flex inset-[-0.54%_12.07%_0.09%_16.22%] items-center justify-center">
-                        <CloseIcon />
-                      </div>
-                      <div className="absolute flex inset-[14.32%_0.56%_16%_-0.56%] items-center justify-center">
-                        <div className="flex-none h-[7.31px] rotate-[-0.27deg] scale-y-97 skew-x-[-14.67deg] w-[8.788px]">
-                          <div className="relative size-full">
-                            <div className="absolute inset-[-6.22%_-5.17%]">
-                              <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 9.69737 8.21942">
-                                <g>
-                                  <path d={svgPaths.p3dfb9680} stroke="#0D0D0D" strokeLinecap="round" strokeLinejoin="round" strokeMiterlimit="1.5" strokeWidth="0.909176" />
-                                </g>
-                              </svg>
+      <div className="bg-[#f7f7f7] h-[40px] relative shrink-0 w-full overflow-x-auto">
+        <div className="flex flex-row items-end overflow-clip rounded-[inherit] h-full">
+          <div className="content-stretch flex items-end px-[4px] relative h-full gap-[4px]">
+            {openDocuments.map((doc) => {
+              const isActive = doc.id === activeDocumentId;
+              return (
+                <div 
+                  key={doc.id}
+                  className={`h-[36px] relative rounded-tl-[12px] rounded-tr-[12px] shrink-0 ${isActive ? 'bg-[#fafafa]' : 'bg-[#ececec]'}`}
+                >
+                  <div className="content-stretch flex gap-[5px] h-full items-center justify-center overflow-clip p-[10px] relative rounded-[inherit]">
+                    <TabPDFIcon />
+                    <button
+                      onClick={() => onTabChange(doc.id)}
+                      className="font-['Inter',sans-serif] font-semibold leading-[1.6] not-italic relative shrink-0 text-[#0d0d0d] text-[10px] cursor-pointer hover:opacity-80 max-w-[120px] truncate"
+                    >
+                      {doc.name}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onTabClose(doc.id);
+                      }}
+                      className="content-stretch flex flex-col items-center justify-center relative shrink-0 size-[20px] cursor-pointer hover:opacity-60 transition-opacity"
+                    >
+                      <div className="h-[10.219px] relative shrink-0 w-[10.607px]">
+                        <div className="absolute contents inset-[-0.54%_0.56%_0.09%_-0.56%]">
+                          <div className="absolute flex inset-[-0.54%_12.07%_0.09%_16.22%] items-center justify-center">
+                            <CloseIcon />
+                          </div>
+                          <div className="absolute flex inset-[14.32%_0.56%_16%_-0.56%] items-center justify-center">
+                            <div className="flex-none h-[7.31px] rotate-[-0.27deg] scale-y-97 skew-x-[-14.67deg] w-[8.788px]">
+                              <div className="relative size-full">
+                                <div className="absolute inset-[-6.22%_-5.17%]">
+                                  <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 9.69737 8.21942">
+                                    <g>
+                                      <path d={svgPaths.p3dfb9680} stroke="#0D0D0D" strokeLinecap="round" strokeLinejoin="round" strokeMiterlimit="1.5" strokeWidth="0.909176" />
+                                    </g>
+                                  </svg>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </button>
                   </div>
+                  <div aria-hidden="true" className="absolute border-[#e0e0e0] border-l-[0.5px] border-r-[0.5px] border-solid border-t-[0.5px] inset-0 pointer-events-none rounded-tl-[12px] rounded-tr-[12px]" />
                 </div>
-              </div>
-              <div aria-hidden="true" className="absolute border-[#e0e0e0] border-l-[0.5px] border-r-[0.5px] border-solid border-t-[0.5px] inset-0 pointer-events-none rounded-tl-[12px] rounded-tr-[12px]" />
-            </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -101,37 +150,46 @@ export default function DocumentPanel({ documentName }: DocumentPanelProps) {
                 {/* Left Controls */}
                 <div className="content-stretch flex gap-[8px] items-center relative shrink-0">
                   {/* Menu */}
-                  <div className="content-stretch flex items-center justify-center relative shrink-0 size-[24px]">
+                  <button
+                    onClick={() => toggleDrawer('pages')}
+                    className="content-stretch flex items-center justify-center relative shrink-0 size-[24px] cursor-pointer"
+                  >
                     <div className="relative shrink-0 size-[18px]">
                       <svg className="absolute block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 18 18">
                         <g>
-                          <path d="M3 9H15" stroke="#595959" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                          <path d="M3 13.5H15" stroke="#595959" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                          <path d="M3 4.5H15" stroke="#595959" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+                          <path d="M3 9H15" stroke={activeDrawer === 'pages' ? '#0D0D0D' : '#595959'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+                          <path d="M3 13.5H15" stroke={activeDrawer === 'pages' ? '#0D0D0D' : '#595959'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+                          <path d="M3 4.5H15" stroke={activeDrawer === 'pages' ? '#0D0D0D' : '#595959'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
                         </g>
                       </svg>
                     </div>
-                  </div>
+                  </button>
 
                   {/* Bookmark */}
-                  <div className="content-stretch flex items-center justify-center relative shrink-0 size-[24px]">
+                  <button
+                    onClick={() => toggleDrawer('bookmarks')}
+                    className="content-stretch flex items-center justify-center relative shrink-0 size-[24px] cursor-pointer"
+                  >
                     <div className="relative shrink-0 size-[18px]">
                       <svg className="absolute block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 18 18">
                         <g>
-                          <path d="M7 2V8L9.5 5.75L12 8V2" stroke="#595959" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                          <path d={svgPaths.p26c0f500} stroke="#595959" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+                          <path d="M7 2V8L9.5 5.75L12 8V2" stroke={activeDrawer === 'bookmarks' ? '#0D0D0D' : '#595959'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+                          <path d={svgPaths.p26c0f500} stroke={activeDrawer === 'bookmarks' ? '#0D0D0D' : '#595959'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
                         </g>
                       </svg>
                     </div>
-                  </div>
+                  </button>
 
                   {/* Comments */}
-                  <div className="content-stretch flex items-center justify-center relative shrink-0 size-[24px]">
+                  <button
+                    onClick={() => toggleDrawer('comments')}
+                    className="content-stretch flex items-center justify-center relative shrink-0 size-[24px] cursor-pointer"
+                  >
                     <div className="relative shrink-0 size-[18px]">
                       <svg className="absolute block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 18 18">
                         <g clipPath="url(#clip0_comments)">
-                          <path d={svgPaths.p3d5ebfc0} stroke="#595959" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                          <path d={svgPaths.p2ee89760} stroke="#595959" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+                          <path d={svgPaths.p3d5ebfc0} stroke={activeDrawer === 'comments' ? '#0D0D0D' : '#595959'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+                          <path d={svgPaths.p2ee89760} stroke={activeDrawer === 'comments' ? '#0D0D0D' : '#595959'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
                         </g>
                         <defs>
                           <clipPath id="clip0_comments">
@@ -140,7 +198,7 @@ export default function DocumentPanel({ documentName }: DocumentPanelProps) {
                         </defs>
                       </svg>
                     </div>
-                  </div>
+                  </button>
 
                   {/* Divider */}
                   <div className="flex h-[18px] items-center justify-center relative shrink-0 w-0">
@@ -173,7 +231,7 @@ export default function DocumentPanel({ documentName }: DocumentPanelProps) {
                   {/* Zoom Controls */}
                   <div className="content-stretch flex gap-[8px] items-center relative shrink-0">
                     <div className="content-stretch flex gap-[4px] items-center relative shrink-0">
-                      <p className="font-['Inter',sans-serif] font-medium leading-[1.6] not-italic relative shrink-0 text-[#8c8c8c] text-[12px]">100%</p>
+                      <p className="font-['Inter',sans-serif] font-medium leading-[1.6] not-italic relative shrink-0 text-[#8c8c8c] text-[12px]">{zoomLevel}%</p>
                       <div className="relative shrink-0 size-[14px]">
                         <svg className="absolute block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 14 14">
                           <g>
@@ -184,7 +242,10 @@ export default function DocumentPanel({ documentName }: DocumentPanelProps) {
                     </div>
 
                     {/* Zoom Out */}
-                    <div className="content-stretch flex items-center justify-center relative rounded-[4px] shrink-0 size-[24px]">
+                    <button
+                      onClick={handleZoomOut}
+                      className="content-stretch flex items-center justify-center relative rounded-[4px] shrink-0 size-[24px] cursor-pointer"
+                    >
                       <div className="content-stretch flex items-center justify-center relative shrink-0 size-[24px]">
                         <div className="relative shrink-0 size-[18px]">
                           <svg className="absolute block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 18 18">
@@ -196,10 +257,13 @@ export default function DocumentPanel({ documentName }: DocumentPanelProps) {
                           </svg>
                         </div>
                       </div>
-                    </div>
+                    </button>
 
                     {/* Zoom In */}
-                    <div className="content-stretch flex items-center justify-center relative rounded-[4px] shrink-0 size-[24px]">
+                    <button
+                      onClick={handleZoomIn}
+                      className="content-stretch flex items-center justify-center relative rounded-[4px] shrink-0 size-[24px] cursor-pointer"
+                    >
                       <div className="content-stretch flex items-center justify-center relative shrink-0 size-[24px]">
                         <div className="relative shrink-0 size-[18px]">
                           <svg className="absolute block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 18 18">
@@ -212,7 +276,7 @@ export default function DocumentPanel({ documentName }: DocumentPanelProps) {
                           </svg>
                         </div>
                       </div>
-                    </div>
+                    </button>
                   </div>
 
                   {/* Divider */}
@@ -333,14 +397,21 @@ export default function DocumentPanel({ documentName }: DocumentPanelProps) {
           </div>
 
           {/* Document Viewer */}
-          <div className="bg-[#fafafa] flex-[1_0_0] min-h-px min-w-px relative w-full">
-            <div className="flex flex-row items-center justify-center size-full">
-              <div className="content-stretch flex gap-[10px] items-center justify-center px-[16px] relative size-full">
-                <div className="flex-[1_0_0] h-full min-h-px min-w-px pointer-events-none relative rounded-[12px]">
+          <div className="bg-[#fafafa] flex-[1_0_0] min-h-px min-w-px relative w-full overflow-hidden">
+            <div className="flex flex-row items-center justify-center size-full overflow-auto">
+              <div className="content-stretch flex gap-[10px] items-center justify-center px-[16px] py-[16px] relative">
+                <div 
+                  className="pointer-events-none relative rounded-[12px] transition-transform duration-200"
+                  style={{ 
+                    transform: `scale(${zoomLevel / 100})`,
+                    transformOrigin: 'center center'
+                  }}
+                >
                   <img
                     alt={documentName}
-                    className="absolute inset-0 max-w-none object-cover rounded-[12px] size-full"
+                    className="max-w-none object-cover rounded-[12px]"
                     src={imgDocument}
+                    style={{ width: '600px', height: 'auto' }}
                   />
                   <div aria-hidden="true" className="absolute border-[#e0e0e0] border-[0.5px] border-solid inset-0 rounded-[12px] shadow-[0px_0px_1px_0px_rgba(0,0,0,0.25)]" />
                 </div>
@@ -349,6 +420,11 @@ export default function DocumentPanel({ documentName }: DocumentPanelProps) {
           </div>
         </div>
       </div>
+
+      {/* Drawers */}
+      {activeDrawer === 'pages' && <PagesDrawer onClose={() => setActiveDrawer(null)} />}
+      {activeDrawer === 'bookmarks' && <BookmarksDrawer onClose={() => setActiveDrawer(null)} />}
+      {activeDrawer === 'comments' && <CommentsDrawer onClose={() => setActiveDrawer(null)} />}
     </div>
   );
 }

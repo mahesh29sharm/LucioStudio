@@ -88,6 +88,17 @@
   --sidebar-ring: rgba(28, 116, 232, 1.00);
 }
 
+/* Ensure the app and root elements fill the viewport so flex children can size correctly. */
+html, body, #root {
+  height: 100%;
+}
+
+/* Utility used throughout the generated components to size elements to their container. */
+.size-full {
+  width: 100%;
+  height: 100%;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
