@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import svgPaths from "../../imports/svg-lqme1g60np";
+import AIInlinePrompt from './AIInlinePrompt';
+import AIInlineResponse from './AIInlineResponse';
 
 interface Note {
   id: string;
@@ -140,6 +142,48 @@ export default function NotesPanel() {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
+  const [showAIPrompt, setShowAIPrompt] = useState(false);
+  const [aiPromptPosition, setAiPromptPosition] = useState({ top: 0, left: 0 });
+  const [selectedText, setSelectedText] = useState('');
+  const [showAIResponse, setShowAIResponse] = useState(false);
+  const [aiPromptText, setAiPromptText] = useState('');
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // Handle text selection
+  useEffect(() => {
+    const handleSelection = (e: Event) => {
+      // Don't handle selection if AI prompt is already open
+      if (showAIPrompt) return;
+      
+      // Don't handle if clicking in edit mode
+      if (isEditing) return;
+
+      const selection = window.getSelection();
+      const text = selection?.toString().trim();
+      
+      if (text && text.length > 0) {
+        setSelectedText(text);
+        
+        // Get selection position
+        const range = selection?.getRangeAt(0);
+        const rect = range?.getBoundingClientRect();
+        
+        if (rect) {
+          setAiPromptPosition({
+            top: rect.bottom + window.scrollY + 8,
+            left: Math.min(rect.left + window.scrollX, window.innerWidth - 400)
+          });
+          setShowAIPrompt(true);
+        }
+      }
+    };
+
+    document.addEventListener('mouseup', handleSelection);
+
+    return () => {
+      document.removeEventListener('mouseup', handleSelection);
+    };
+  }, [isEditing, showAIPrompt]);
 
   const handleNewNote = () => {
     const newNote: Note = {
@@ -160,11 +204,11 @@ export default function NotesPanel() {
     setEditTitle(note.title);
     setEditContent(note.content);
     setIsEditing(false);
+    setShowAIResponse(false);
   };
 
   const handleBack = () => {
     if (isEditing && selectedNote) {
-      // Save changes
       setNotes(notes.map(note => 
         note.id === selectedNote.id 
           ? { ...note, title: editTitle, content: editContent, lastUpdated: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) }
@@ -173,10 +217,12 @@ export default function NotesPanel() {
     }
     setSelectedNote(null);
     setIsEditing(false);
+    setShowAIResponse(false);
   };
 
   const handleEdit = () => {
     setIsEditing(true);
+    setShowAIResponse(false);
   };
 
   const handleSave = () => {
@@ -196,7 +242,43 @@ export default function NotesPanel() {
       setNotes(notes.filter(note => note.id !== selectedNote.id));
       setSelectedNote(null);
       setIsEditing(false);
+      setShowAIResponse(false);
     }
+  };
+
+  const handleAIPromptSubmit = (prompt: string) => {
+    setAiPromptText(prompt);
+    setShowAIPrompt(false);
+    setShowAIResponse(true);
+    
+    // Clear selection
+    window.getSelection()?.removeAllRanges();
+  };
+
+  const handleAIPromptClose = () => {
+    setShowAIPrompt(false);
+    setSelectedText('');
+    window.getSelection()?.removeAllRanges();
+  };
+
+  const handleAIResponseAccept = (response: string) => {
+    if (selectedNote) {
+      const newContent = selectedNote.content ? `${selectedNote.content}\n\n${response}` : response;
+      setNotes(notes.map(note => 
+        note.id === selectedNote.id 
+          ? { ...note, content: newContent, lastUpdated: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) }
+          : note
+      ));
+      setSelectedNote({ ...selectedNote, content: newContent });
+      setEditContent(newContent);
+    }
+    setShowAIResponse(false);
+    setAiPromptText('');
+  };
+
+  const handleAIResponseDiscard = () => {
+    setShowAIResponse(false);
+    setAiPromptText('');
   };
 
   // Note Detail View
@@ -252,7 +334,7 @@ export default function NotesPanel() {
 
           {/* Note Content */}
           <div className="flex-[1_0_0] min-h-px min-w-px overflow-y-auto relative w-full">
-            <div className="content-stretch flex flex-col gap-[16px] items-start px-[16px] py-[16px] relative w-full">
+            <div ref={contentRef} className="content-stretch flex flex-col gap-[16px] items-start px-[16px] py-[16px] relative w-full">
               {/* Title */}
               {isEditing ? (
                 <input
@@ -282,14 +364,35 @@ export default function NotesPanel() {
                   placeholder="Start typing your note..."
                 />
               ) : (
-                <p className="font-['Inter',sans-serif] font-normal leading-[1.6] not-italic relative w-full text-[#0d0d0d] text-[14px] whitespace-pre-wrap">
-                  {selectedNote.content || 'No content yet. Click Edit to add content.'}
-                </p>
+                <>
+                  <p className="font-['Inter',sans-serif] font-normal leading-[1.6] not-italic relative w-full text-[#0d0d0d] text-[14px] whitespace-pre-wrap">
+                    {selectedNote.content || 'No content yet. Click Edit to add content.'}
+                  </p>
+                  
+                  {/* AI Response inline */}
+                  {showAIResponse && (
+                    <AIInlineResponse
+                      prompt={aiPromptText}
+                      onAccept={handleAIResponseAccept}
+                      onDiscard={handleAIResponseDiscard}
+                    />
+                  )}
+                </>
               )}
             </div>
           </div>
         </div>
         <div aria-hidden="true" className="absolute border-[#e0e0e0] border-l-[0.5px] border-solid inset-0 pointer-events-none" />
+        
+        {/* AI Prompt (appears on text selection) */}
+        {showAIPrompt && !isEditing && (
+          <AIInlinePrompt
+            position={aiPromptPosition}
+            onClose={handleAIPromptClose}
+            onSubmit={handleAIPromptSubmit}
+            selectedText={selectedText}
+          />
+        )}
       </div>
     );
   }
